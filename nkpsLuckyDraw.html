@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>南港國小亂數抽籤</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="description" content="南港國小亂數抽籤">
+    <meta name="keywords" content="random, NKPS">
+    <meta name="author" content="Charles He Lu">
+</head>    
+<body>
+
+<h1>南港國小亂數抽籤</h1>
+
+<p>以全校班級為對象，抽出特定數量的人數</p>
+
+<script>
+function showInput() {
+    var students = document.getElementById("students").value;
+    var classes = document.getElementById("classes").value;
+    var luckyboy = document.getElementById("luckyboy").value;
+    //document.getElementById('display').innerHTML = students + " " +classes + " "+ luckyboy ;  //debug 
+    for (var i = 0; i < luckyboy; i++) {
+      var grade=Math.floor(Math.random() * 6) + 1; 
+      var cls=Math.floor(Math.random() * classes) + 1; 
+      var studentno=Math.floor(Math.random() * students) + 1; 
+      document.getElementById('display').innerHTML += '<div id="myId'+i+'">'+(i+1)+") "+grade+'年級'+cls+"班"+studentno+"號</div>"
+    }
+}
+</script>
+
+ <form>
+    <label>輸入每班人數上限（例如30人）:</label><input type="text" id="students" value="30" /><br />
+    <label>請輸入各年級班級上限（例如8班）: </label><input type="text" id="classes" value="8" /><br />
+    <label>請輸入要抽多少人（例如10位幸運兒）: </label><input type="text" id="luckyboy" value="10"/><br />
+ </form>
+
+ <input type="submit" onclick="showInput();"><br/>
+    <label>Your input: </label>
+ <p><span id='display'></span></p>
+</body>
+</html>
