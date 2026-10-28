@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SteamGifts Filter Builder</title>
+    <meta name="description" content="SteamGifts Giveaway Filter URL Builder">
+    <meta name="author" content="rokaku">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+            background: #f0f2f5;
+            color: #1f2328;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #1b5e9e;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: #57606a;
+            margin-bottom: 28px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: #ffffff;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .section-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #57606a;
+            margin-bottom: 14px;
+        }
+
+        /* Toggle chips */
+        .chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1px solid #d0d7de;
+            background: #f7f8fa;
+            color: #1f2328;
+            font-size: 0.83rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+
+        .chip:hover { border-color: #1b5e9e; color: #1b5e9e; background: #eef4fb; }
+
+        .chip.active {
+            background: #1a9fff;
+            border-color: #1a9fff;
+            color: #fff;
+        }
+
+        /* Search input */
+        .search-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-row input[type="text"] {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            color: #1f2328;
+            font-size: 0.875rem;
+            padding: 7px 10px;
+            outline: none;
+        }
+
+        .search-row input[type="text"]:focus {
+            border-color: #1a9fff;
+            box-shadow: 0 0 0 2px rgba(26,159,255,0.15);
+        }
+
+        /* Sort select */
+        select {
+            background: #ffffff;
+            border: 1px solid #d0d7de;
+            border-radius: 4px;
+            color: #1f2328;
+            font-size: 0.875rem;
+            padding: 7px 10px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus { border-color: #1a9fff; }
+
+        /* Result area */
+        .result-box {
+            background: #ffffff;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: #57606a;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .result-url {
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.82rem;
+            color: #1b5e9e;
+            word-break: break-all;
+            line-height: 1.6;
+            background: #f7f8fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 8px 10px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-primary {
+            background: #1a9fff;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #1189e6; }
+
+        .btn-secondary {
+            background: #f7f8fa;
+            border: 1px solid #d0d7de;
+            color: #1f2328;
+        }
+        .btn-secondary:hover { border-color: #1a9fff; color: #1a9fff; }
+
+        .btn-reset {
+            background: transparent;
+            border: 1px solid #d0463a;
+            color: #d0463a;
+        }
+        .btn-reset:hover { background: #d0463a; color: #fff; }
+
+        /* tag count badge */
+        .badge {
+            display: inline-block;
+            background: #dbeafe;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 0.72rem;
+            color: #1b5e9e;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎁 SteamGifts Filter Builder</h1>
+    <p class="subtitle">Click the options below to build your giveaway search URL.</p>
+
+    <!-- Type filters -->
+    <div class="section">
+        <div class="section-title">Giveaway Type</div>
+        <div class="chips">
+            <span class="chip" data-key="type" data-value="wishlist" title="Only wishlist giveaways">Wishlist</span>
+            <span class="chip" data-key="type" data-value="recommended" title="Only recommended giveaways">Recommended</span>
+            <span class="chip" data-key="type" data-value="group" title="Group giveaways">Group</span>
+            <span class="chip" data-key="type" data-value="new" title="Recently added giveaways">New</span>
+        </div>
+    </div>
+
+    <!-- Boolean toggles -->
+    <div class="section">
+        <div class="section-title">Filters</div>
+        <div class="chips">
+            <span class="chip" data-key="region_restricted" data-value="true">🌍 Region Restricted</span>
+            <span class="chip" data-key="dlc" data-value="true">DLC Only</span>
+        </div>
+    </div>
+
+    <!-- All ranges -->
+    <div class="section">
+        <div class="section-title">Ranges</div>
+        <div style="display:grid; grid-template-columns:120px 100px 120px 100px; gap:10px 12px; align-items:center;">
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Min Level</label>
+            <input type="number" id="level-min" min="0" max="10" placeholder="e.g. 1"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Max Level</label>
+            <input type="number" id="level-max" min="0" max="10" placeholder="e.g. 10"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Min Points</label>
+            <input type="number" id="point-min" min="0" max="50" placeholder="e.g. 0"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Max Points</label>
+            <input type="number" id="point-max" min="0" max="50" placeholder="e.g. 50"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Min Entries</label>
+            <input type="number" id="entry-min" min="0" placeholder="e.g. 0"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Max Entries</label>
+            <input type="number" id="entry-max" min="0" placeholder="e.g. 5000"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Min Copies</label>
+            <input type="number" id="copy-min" min="0" placeholder="e.g. 1"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Max Copies</label>
+            <input type="number" id="copy-max" min="0" placeholder="e.g. 100"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Min Metascore</label>
+            <input type="number" id="metascore-min" min="0" max="100" placeholder="e.g. 70"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+            <label style="font-size:0.875rem; color:#57606a; text-align:right;">Max Metascore</label>
+            <input type="number" id="metascore-max" min="0" max="100" placeholder="e.g. 100"
+                style="background:#fff; border:1px solid #d0d7de; border-radius:4px; color:#1f2328; font-size:0.875rem; padding:6px 8px; outline:none; width:100%;" />
+        </div>
+    </div>
+
+    <!-- Search keyword -->
+    <div class="section">
+        <div class="section-title">Search Keyword</div>
+        <div class="search-row">
+            <input type="text" id="search-input" placeholder="e.g. Portal, RPG, Valve…" />
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-box">
+        <div class="result-label">Generated URL</div>
+        <div class="result-url" id="result-url">https://www.steamgifts.com/giveaways/search</div>
+        <div class="btn-row">
+            <button class="btn btn-primary" id="btn-open">Open in Browser</button>
+            <button class="btn btn-secondary" id="btn-copy">Copy URL</button>
+            <button class="btn btn-reset" id="btn-reset">Reset All</button>
+        </div>
+    </div>
+
+    <!-- Active params summary -->
+    <div id="active-summary" style="font-size:0.8rem; color:#57606a; min-height:20px;"></div>
+</div>
+
+<script>
+    const BASE = 'https://www.steamgifts.com/giveaways/search';
+
+    // State: key -> value (single-select per key, except level uses key "level")
+    const state = {};
+
+    // Exclusive groups: only one chip active per key
+    const exclusiveKeys = ['type', 'region_restricted'];
+
+    function buildURL() {
+        const params = new URLSearchParams();
+
+        // keyword
+        const kw = document.getElementById('search-input').value.trim();
+        if (kw) params.set('q', kw);
+
+        // level range
+        const lMin = document.getElementById('level-min').value.trim();
+        const lMax = document.getElementById('level-max').value.trim();
+        if (lMin !== '') params.set('level_min', lMin);
+        if (lMax !== '') params.set('level_max', lMax);
+
+        // points range
+        const pMin = document.getElementById('point-min').value.trim();
+        const pMax = document.getElementById('point-max').value.trim();
+        if (pMin !== '') params.set('point_min', pMin);
+        if (pMax !== '') params.set('point_max', pMax);
+
+        // entry range
+        const eMin = document.getElementById('entry-min').value.trim();
+        const eMax = document.getElementById('entry-max').value.trim();
+        if (eMin !== '') params.set('entry_min', eMin);
+        if (eMax !== '') params.set('entry_max', eMax);
+
+        // copy range
+        const cMin = document.getElementById('copy-min').value.trim();
+        const cMax = document.getElementById('copy-max').value.trim();
+        if (cMin !== '') params.set('copy_min', cMin);
+        if (cMax !== '') params.set('copy_max', cMax);
+
+        // metascore range
+        const mMin = document.getElementById('metascore-min').value.trim();
+        const mMax = document.getElementById('metascore-max').value.trim();
+        if (mMin !== '') params.set('metascore_min', mMin);
+        if (mMax !== '') params.set('metascore_max', mMax);
+
+        // state params
+        for (const [k, v] of Object.entries(state)) {
+            params.set(k, v);
+        }
+
+        const qs = params.toString();
+        return qs ? BASE + '?' + qs : BASE;
+    }
+
+    function render() {
+        const url = buildURL();
+        document.getElementById('result-url').textContent = url;
+
+        // Summary
+        const parts = [];
+        for (const [k, v] of Object.entries(state)) parts.push(k + '=' + v);
+        const kw = document.getElementById('search-input').value.trim();
+        if (kw) parts.push('q=' + kw);
+        const lMin = document.getElementById('level-min').value.trim();
+        const lMax = document.getElementById('level-max').value.trim();
+        if (lMin !== '') parts.push('level_min=' + lMin);
+        if (lMax !== '') parts.push('level_max=' + lMax);
+        const pMin = document.getElementById('point-min').value.trim();
+        const pMax = document.getElementById('point-max').value.trim();
+        if (pMin !== '') parts.push('point_min=' + pMin);
+        if (pMax !== '') parts.push('point_max=' + pMax);
+        const eMin = document.getElementById('entry-min').value.trim();
+        const eMax = document.getElementById('entry-max').value.trim();
+        if (eMin !== '') parts.push('entry_min=' + eMin);
+        if (eMax !== '') parts.push('entry_max=' + eMax);
+        const cMin = document.getElementById('copy-min').value.trim();
+        const cMax = document.getElementById('copy-max').value.trim();
+        if (cMin !== '') parts.push('copy_min=' + cMin);
+        if (cMax !== '') parts.push('copy_max=' + cMax);
+        const mMin = document.getElementById('metascore-min').value.trim();
+        const mMax = document.getElementById('metascore-max').value.trim();
+        if (mMin !== '') parts.push('metascore_min=' + mMin);
+        if (mMax !== '') parts.push('metascore_max=' + mMax);
+        document.getElementById('active-summary').textContent =
+            parts.length ? 'Active params: ' + parts.join(', ') : '';
+    }
+
+    // Chip click logic
+    document.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const key = chip.dataset.key;
+            const value = chip.dataset.value;
+
+            if (chip.classList.contains('active')) {
+                // Deselect
+                chip.classList.remove('active');
+                delete state[key];
+            } else {
+                // Deselect siblings with same key
+                document.querySelectorAll(`.chip[data-key="${key}"]`).forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                state[key] = value;
+            }
+            render();
+        });
+    });
+
+    document.getElementById('search-input').addEventListener('input', render);
+    document.getElementById('level-min').addEventListener('input', render);
+    document.getElementById('level-max').addEventListener('input', render);
+    ['entry-min','entry-max','copy-min','copy-max','metascore-min','metascore-max']
+        .forEach(id => document.getElementById(id).addEventListener('input', render));
+
+    document.getElementById('btn-open').addEventListener('click', () => {
+        window.open(buildURL(), '_blank');
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', () => {
+        const url = buildURL();
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById('btn-copy');
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy URL'; }, 1500);
+        });
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        // Clear state
+        for (const k in state) delete state[k];
+        document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+        document.getElementById('search-input').value = '';
+        document.getElementById('level-min').value = '';
+        document.getElementById('level-max').value = '';
+        document.getElementById('point-min').value = '';
+        document.getElementById('point-max').value = '';
+        ['entry-min','entry-max','copy-min','copy-max','metascore-min','metascore-max']
+            .forEach(id => { document.getElementById(id).value = ''; });
+        render();
+    });
+
+    render();
+</script>
+</body>
+</html>
