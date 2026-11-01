@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Dashboard</title>
+    <meta name="description" content="Personal dashboard: Google Trends, Taiwan and US stock indices, and top news.">
+    <meta name="author" content="rokaku">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --shadow: 0 1px 2px rgba(20,30,60,0.05), 0 8px 24px -12px rgba(20,30,60,0.18);
+            --shadow-hover: 0 1px 2px rgba(20,30,60,0.06), 0 14px 28px -12px rgba(20,30,60,0.28);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+            background: linear-gradient(180deg, #e8eefb 0%, #f4f6fb 260px, #f4f6fb 100%) no-repeat #f4f6fb;
+            color: #1f2328;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 40px 16px 32px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: clamp(1.7rem, 4.5vw, 2.3rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            background: linear-gradient(120deg, #1f2328 25%, #2f5fd0 75%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .page-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .tool-link {
+            font-size: 0.85rem;
+            color: #2f5fd0;
+            text-decoration: none;
+            padding: 4px 12px;
+            border: 1px solid #dde2ea;
+            border-radius: 999px;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(20,30,60,0.05);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .tool-link:hover { border-color: #2f5fd0; box-shadow: var(--shadow); }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #57606a;
+            margin-bottom: 12px;
+        }
+
+        .trends-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #57606a;
+            margin: 28px 0 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .trends-more {
+            font-size: 0.78rem;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            color: #2f5fd0;
+            text-decoration: none;
+        }
+
+        .trends-more:hover { text-decoration: underline; }
+
+        .trends {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .trends a, .trends span, .trends button {
+            padding: 6px 16px;
+            border-radius: 999px;
+            border: 1px solid #dde2ea;
+            background: #ffffff;
+            color: #1f2328;
+            font-size: 0.85rem;
+            font-family: inherit;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(20,30,60,0.05);
+            transition: border-color 0.15s, color 0.15s, transform 0.15s, box-shadow 0.15s;
+        }
+
+        .trends button { cursor: pointer; }
+        .trends a:hover, .trends button:hover { border-color: #2f5fd0; color: #2f5fd0; transform: translateY(-1px); box-shadow: var(--shadow); }
+        .trends button[aria-expanded="true"] { border-color: #2f5fd0; color: #2f5fd0; background: #eaf0fd; }
+
+        .trends-detail {
+            display: none;
+            margin-top: 12px;
+            background: #ffffff;
+            border: 1px solid #dde2ea;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 14px 18px;
+            font-size: 0.88rem;
+        }
+
+        .trends-detail.open { display: block; }
+        .trends-detail-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; color: #57606a; font-size: 0.8rem; }
+        .trends-detail a { color: #2f5fd0; text-decoration: none; }
+        .trends-detail a:hover { text-decoration: underline; }
+        .trends-detail ul { margin: 0; padding-left: 18px; }
+        .trends-detail li { margin: 4px 0; }
+        .trends-detail li small { color: #57606a; }
+
+        .news-tabs { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: baseline; }
+
+        .news-tabs button {
+            border: 1px solid #dde2ea;
+            background: #ffffff;
+            color: #57606a;
+            font-size: 0.75rem;
+            font-family: inherit;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            padding: 1px 10px;
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .news-tabs button:hover { border-color: #2f5fd0; color: #2f5fd0; }
+        .news-tabs button[aria-pressed="true"] { border-color: #2f5fd0; background: #eaf0fd; color: #2f5fd0; }
+
+        .news-item, .news > span {
+            display: block;
+            background: #ffffff;
+            border: 1px solid #dde2ea;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            font-size: 0.92rem;
+            transition: border-color 0.15s, transform 0.2s, box-shadow 0.2s;
+        }
+
+        .news-item:hover { border-color: #2f5fd0; transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+        .news-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+        .news-row a { color: #1f2328; text-decoration: none; }
+        .news-row a:hover { color: #2f5fd0; }
+
+        .news-toggle {
+            flex: none;
+            border: none;
+            background: none;
+            color: #57606a;
+            font-size: 0.9rem;
+            line-height: 1;
+            padding: 4px 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: transform 0.2s, color 0.15s;
+        }
+
+        .news-toggle:hover { color: #2f5fd0; background: #eaf0fd; }
+        .news-toggle[aria-expanded="true"] { transform: rotate(180deg); color: #2f5fd0; }
+
+        .news-sub {
+            display: none;
+            margin-top: 6px;
+            font-size: 0.82rem;
+            color: #57606a;
+        }
+
+        .news-sub.open { display: block; }
+
+        .stock {
+            background: #ffffff;
+            border: 1px solid #dde2ea;
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 16px 20px;
+            font-size: 0.9rem;
+        }
+
+        .stock-main { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+        .stock-index { font-size: 1.4rem; font-weight: 700; }
+        .stock-up { color: #d0463a; }
+        .stock-down { color: #1a7f37; }
+        .stock-meta { margin-top: 4px; font-size: 0.8rem; color: #57606a; }
+
+        .markets {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 16px;
+        }
+
+        .markets > div { min-width: 0; }
+
+        @media (max-width: 600px) {
+            .markets { grid-template-columns: 1fr; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { transition: none !important; }
+        }
+
+        footer {
+            margin-top: 32px;
+            font-size: 0.8rem;
+            color: #57606a;
+        }
+
+        footer a { color: #2f5fd0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="page-head">
+        <h1>Personal Dashboard</h1>
+        <a class="tool-link" href="steamgiftsFilter.html">SteamGifts Filter →</a>
+    </div>
+    <p class="subtitle">台灣熱搜 · 台美股市 · 國際新聞</p>
+
+    <div class="trends-title">
+        Google Trends Latest (TW)
+        <a class="trends-more" href="https://trends.google.com/trending?geo=TW" target="_blank" rel="noopener">See all on Google Trends →</a>
+    </div>
+    <div class="trends" id="trends"><span>Loading…</span></div>
+    <div class="trends-detail" id="trends-detail"></div>
+
+    <div class="markets">
+        <div>
+            <div class="trends-title">
+                TAIEX 台股加權指數
+                <a class="trends-more" href="https://www.twse.com.tw/zh/trading/historical/fmtqik.html" target="_blank" rel="noopener">TWSE →</a>
+            </div>
+            <div class="stock" id="stock-tw"><span>Loading…</span></div>
+        </div>
+        <div>
+            <div class="trends-title">
+                S&amp;P 500 美股標普
+                <a class="trends-more" href="https://fred.stlouisfed.org/series/SP500" target="_blank" rel="noopener">FRED →</a>
+            </div>
+            <div class="stock" id="stock-us"><span>Loading…</span></div>
+        </div>
+    </div>
+
+    <div class="trends-title">
+        <span>Top News
+            <span class="news-tabs">
+                <button type="button" data-region="intl" aria-pressed="true">國際 BBC</button>
+                <button type="button" data-region="tw" aria-pressed="false">台灣 中央社</button>
+            </span>
+        </span>
+        <a class="trends-more" id="news-more" href="https://www.bbc.com/zhongwen/trad" target="_blank" rel="noopener">More on BBC 中文 →</a>
+    </div>
+    <div class="news" id="news"><span>Loading…</span></div>
+
+    <footer>Released under <a href="https://github.com/rokaku/rokaku.github.io/blob/master/LICENSE">MIT</a>.</footer>
+</div>
+<script>
+    const WORKER = 'https://trends-proxy.rokaku.workers.dev/';
+
+    // 讀取 Worker 回傳的 RSS，把前 limit 筆渲染成新聞列：標題為連結，副標題點右側箭頭才展開
+    function loadFeed(query, box, limit, render, errorText) {
+        fetch(WORKER + query)
+            .then(r => r.text())
+            .then(text => {
+                const xml = new DOMParser().parseFromString(text, 'application/xml');
+                const items = [...xml.querySelectorAll('item')].slice(0, limit).map(i => ({
+                    title: i.querySelector('title')?.textContent.trim() || '',
+                    link: i.querySelector('link')?.textContent.trim() || '',
+                    desc: i.querySelector('description')?.textContent.trim() || ''
+                })).filter(i => i.title);
+                if (!items.length) throw new Error('no items');
+                box.textContent = '';
+                items.forEach(item => {
+                    const wrap = document.createElement('div');
+                    wrap.className = 'news-item';
+                    const row = document.createElement('div');
+                    row.className = 'news-row';
+
+                    const a = document.createElement('a');
+                    a.textContent = item.title;
+                    a.href = render(item);
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    row.appendChild(a);
+                    wrap.appendChild(row);
+
+                    if (item.desc) {
+                        const sub = document.createElement('div');
+                        sub.className = 'news-sub';
+                        sub.textContent = item.desc;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'news-toggle';
+                        btn.textContent = '▾';
+                        btn.setAttribute('aria-expanded', 'false');
+                        btn.setAttribute('aria-label', '展開摘要');
+                        btn.addEventListener('click', () => {
+                            const open = btn.getAttribute('aria-expanded') !== 'true';
+                            btn.setAttribute('aria-expanded', String(open));
+                            btn.setAttribute('aria-label', open ? '收合摘要' : '展開摘要');
+                            sub.classList.toggle('open', open);
+                        });
+                        row.appendChild(btn);
+                        wrap.appendChild(sub);
+                    }
+                    box.appendChild(wrap);
+                });
+            })
+            .catch(() => {
+                box.innerHTML = '<span>' + errorText + '</span>';
+            });
+    }
+
+    const num = s => parseFloat(String(s).replace(/,/g, ''));
+    const fmt = (v, d = 2) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+
+    function sparkline(points, label) {
+        const W = 600, H = 120, P = 6;
+        const ys = points.map(p => p.close);
+        const min = Math.min(...ys), max = Math.max(...ys);
+        const span = max - min || 1;
+        const x = i => P + i * (W - 2 * P) / Math.max(points.length - 1, 1);
+        const y = v => H - P - (v - min) / span * (H - 2 * P);
+        const pts = ys.map((v, i) => x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
+        const color = ys[ys.length - 1] >= ys[0] ? '#d0463a' : '#1a7f37'; // 台股慣例：漲紅、跌綠
+        return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '" preserveAspectRatio="none" role="img" aria-label="' + label + ' trend">'
+            + '<polyline fill="none" stroke="' + color + '" stroke-width="2" vector-effect="non-scaling-stroke" points="' + pts + '"/>'
+            + '</svg>';
+    }
+
+    // points: [{date, close}]，由舊到新；noteFn：最新一天的額外說明文字（可省略）
+    function renderMarket(box, points, label, noteFn) {
+        if (!points.length) throw new Error('no data');
+        const last = points[points.length - 1];
+        const prevClose = points.length > 1 ? points[points.length - 2].close : last.close;
+        const diff = last.close - prevClose;
+        const cls = diff > 0 ? 'stock-up' : diff < 0 ? 'stock-down' : '';
+        const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '';
+        const pct = prevClose ? Math.abs(diff) / prevClose * 100 : 0;
+        box.textContent = '';
+
+        const main = document.createElement('div');
+        main.className = 'stock-main';
+        const idx = document.createElement('span');
+        idx.className = 'stock-index ' + cls;
+        idx.textContent = fmt(last.close);
+        const chg = document.createElement('span');
+        chg.className = cls;
+        chg.textContent = arrow + ' ' + fmt(Math.abs(diff)) + ' (' + pct.toFixed(2) + '%)';
+        main.append(idx, chg);
+
+        const meta = document.createElement('div');
+        meta.className = 'stock-meta';
+        meta.textContent = last.date + ' 收盤' + (noteFn ? ' · ' + noteFn(last) : '');
+        box.append(main, meta);
+
+        if (points.length > 1) {
+            const chart = document.createElement('div');
+            chart.style.marginTop = '8px';
+            chart.innerHTML = sparkline(points, label);
+            const ys = points.map(p => p.close);
+            const range = document.createElement('div');
+            range.className = 'stock-meta';
+            range.textContent = points[0].date + ' ~ ' + last.date + ' · 最高 ' + fmt(Math.max(...ys)) + ' · 最低 ' + fmt(Math.min(...ys));
+            box.append(chart, range);
+        }
+    }
+
+    // 台股：證交所每日收盤資料（支援 CORS），取最近 3 個月
+    (function () {
+        const MONTHS = 3;
+        const now = new Date();
+        const dates = [];
+        for (let i = 0; i < MONTHS; i++) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            dates.push(d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + '01');
+        }
+        const fetchMonth = date =>
+            fetch('https://www.twse.com.tw/rwd/zh/afterTrading/FMTQIK?response=json&date=' + date)
+                .then(r => r.json())
+                .then(d => d.stat === 'OK' ? d.data : [])
+                .catch(() => []);
+
+        const box = document.getElementById('stock-tw');
+        Promise.all(dates.map(fetchMonth))
+            .then(parts => {
+                // 每列格式：[日期, 成交股數, 成交金額, 成交筆數, 加權指數, 漲跌點數]
+                const points = parts.reverse().flat().map(r => ({ date: r[0], close: num(r[4]), value: num(r[2]) }));
+                renderMarket(box, points, 'TAIEX', p => '成交金額 ' + fmt(p.value / 1e8, 0) + ' 億');
+            })
+            .catch(() => { box.innerHTML = '<span>Unable to load Taiwan stock data.</span>'; });
+    })();
+
+    // 美股：FRED 的 S&P 500 每日收盤 CSV（經 Worker 解決 CORS），約 100 天
+    (function () {
+        const box = document.getElementById('stock-us');
+        fetch(WORKER + '?type=us&id=SP500')
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+            .then(text => {
+                const points = text.trim().split('\n').slice(1)
+                    .map(l => l.split(','))
+                    .filter(c => c.length === 2 && c[1] !== '' && !isNaN(num(c[1])))
+                    .map(c => ({ date: c[0], close: num(c[1]) }));
+                renderMarket(box, points, 'S&P 500', null);
+            })
+            .catch(() => { box.innerHTML = '<span>Unable to load US stock data.</span>'; });
+    })();
+
+    // Google Trends：每個關鍵字是一顆切換按鈕，點擊後展開相關新聞
+    (function () {
+        const box = document.getElementById('trends');
+        const detail = document.getElementById('trends-detail');
+        const tag = (el, name) => el.getElementsByTagName(name)[0]?.textContent.trim() || '';
+
+        function showDetail(btn, t) {
+            const open = btn.getAttribute('aria-expanded') === 'true';
+            box.querySelectorAll('button').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            detail.classList.remove('open');
+            if (open) return;
+            btn.setAttribute('aria-expanded', 'true');
+
+            detail.textContent = '';
+            const head = document.createElement('div');
+            head.className = 'trends-detail-head';
+            const info = document.createElement('span');
+            info.textContent = t.traffic ? t.title + ' · ' + t.traffic + ' searches' : t.title;
+            const g = document.createElement('a');
+            g.href = 'https://www.google.com/search?q=' + encodeURIComponent(t.title);
+            g.target = '_blank';
+            g.rel = 'noopener';
+            g.textContent = 'Search on Google →';
+            head.append(info, g);
+            detail.appendChild(head);
+
+            if (t.news.length) {
+                const ul = document.createElement('ul');
+                t.news.forEach(n => {
+                    const li = document.createElement('li');
+                    const a = document.createElement('a');
+                    a.href = n.url;
+                    a.target = '_blank';
+                    a.rel = 'noopener';
+                    a.textContent = n.title;
+                    li.appendChild(a);
+                    if (n.source) {
+                        const s = document.createElement('small');
+                        s.textContent = ' · ' + n.source;
+                        li.appendChild(s);
+                    }
+                    ul.appendChild(li);
+                });
+                detail.appendChild(ul);
+            } else {
+                const none = document.createElement('div');
+                none.className = 'stock-meta';
+                none.textContent = 'No related news provided by Google. Try searching instead.';
+                detail.appendChild(none);
+            }
+            detail.classList.add('open');
+        }
+
+        fetch(WORKER + '?geo=TW')
+            .then(r => r.text())
+            .then(text => {
+                const xml = new DOMParser().parseFromString(text, 'application/xml');
+                const trends = [...xml.querySelectorAll('item')].map(i => ({
+                    title: tag(i, 'title'),
+                    traffic: tag(i, 'ht:approx_traffic'),
+                    news: [...i.getElementsByTagName('ht:news_item')].map(n => ({
+                        title: tag(n, 'ht:news_item_title'),
+                        url: tag(n, 'ht:news_item_url'),
+                        source: tag(n, 'ht:news_item_source')
+                    })).filter(n => n.title && n.url.startsWith('https://'))
+                })).filter(t => t.title);
+                if (!trends.length) throw new Error('no items');
+                box.textContent = '';
+                trends.forEach(t => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.textContent = t.title;
+                    b.setAttribute('aria-expanded', 'false');
+                    b.addEventListener('click', () => showDetail(b, t));
+                    box.appendChild(b);
+                });
+            })
+            .catch(() => { box.innerHTML = '<span>Unable to load trends.</span>'; });
+    })();
+
+    // 新聞：國際（BBC 中文，預設）/ 台灣（中央社）切換
+    (function () {
+        const SOURCES = {
+            intl: { query: '?type=news', fallback: 'https://www.bbc.com/zhongwen/trad', more: 'More on BBC 中文 →' },
+            tw: { query: '?type=news&region=tw', fallback: 'https://www.cna.com.tw/', more: 'More on 中央社 →' }
+        };
+        const box = document.getElementById('news');
+        const more = document.getElementById('news-more');
+        const tabs = document.querySelectorAll('.news-tabs button');
+
+        function show(region) {
+            const s = SOURCES[region];
+            tabs.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.region === region)));
+            more.href = s.fallback;
+            more.textContent = s.more;
+            box.innerHTML = '<span>Loading…</span>';
+            loadFeed(s.query, box, 5,
+                item => item.link.startsWith('https://') ? item.link : s.fallback,
+                'Unable to load news.');
+        }
+
+        tabs.forEach(b => b.addEventListener('click', () => show(b.dataset.region)));
+        show('intl');
+    })();
+</script>
+</body>
+</html>
