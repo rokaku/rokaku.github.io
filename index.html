@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Dashboard</title>
-    <meta name="description" content="Personal dashboard: Google Trends, Taiwan and US stock indices, and top news.">
+    <meta name="description" content="Personal dashboard: Google Trends, TAIEX and SOX semiconductor index, and top news.">
     <meta name="author" content="rokaku">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -34,7 +34,7 @@
             font-weight: 800;
             letter-spacing: -0.02em;
             line-height: 1.2;
-            background: linear-gradient(120deg, #1f2328 25%, #2f5fd0 75%);
+            background: linear-gradient(120deg, #1f2328 40%, #2f5fd0 60%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
@@ -49,6 +49,8 @@
             margin-bottom: 8px;
         }
 
+        .tool-links { display: flex; gap: 8px; flex-wrap: wrap; }
+
         .tool-link {
             font-size: 0.85rem;
             color: #2f5fd0;
@@ -62,6 +64,24 @@
         }
 
         .tool-link:hover { border-color: #2f5fd0; box-shadow: var(--shadow); }
+
+        .todo {
+            display: none;
+            background: #fff8e6;
+            border: 1px solid #f0dca0;
+            border-radius: 14px;
+            padding: 10px 18px;
+            margin: 12px 0 4px;
+            font-size: 0.9rem;
+        }
+
+        .todo.show { display: block; }
+        .todo-title { font-size: 0.78rem; font-weight: 700; color: #7a5b00; margin-bottom: 4px; }
+        .todo ul { margin: 0; padding-left: 18px; }
+        .todo li { margin: 2px 0; }
+        .todo li small { color: #7a5b00; }
+        .todo.green { background: #eaf7ee; border-color: #b7e0c2; }
+        .todo.green .todo-title, .todo.green li small { color: #1f6b3a; }
 
         .subtitle {
             font-size: 0.95rem;
@@ -242,9 +262,15 @@
 <div class="container">
     <div class="page-head">
         <h1>Personal Dashboard</h1>
-        <a class="tool-link" href="steamgiftsFilter.html">SteamGifts Filter →</a>
+        <span class="tool-links">
+            <a class="tool-link" href="steamgiftsFilter.html">SteamGifts Filter →</a>
+            <a class="tool-link" href="https://rokaku.github.io/tv/">Live TV →</a>
+        </span>
     </div>
     <p class="subtitle">台灣熱搜 · 台美股市 · 國際新聞</p>
+
+    <div class="todo" id="todo-tax"></div>
+    <div class="todo green" id="todo-life"></div>
 
     <div class="trends-title">
         Google Trends Latest (TW)
@@ -263,8 +289,8 @@
         </div>
         <div>
             <div class="trends-title">
-                S&amp;P 500 美股標普
-                <a class="trends-more" href="https://fred.stlouisfed.org/series/SP500" target="_blank" rel="noopener">FRED →</a>
+                SOX 費城半導體指數
+                <a class="trends-more" href="https://finance.yahoo.com/quote/%5ESOX/" target="_blank" rel="noopener">Yahoo →</a>
             </div>
             <div class="stock" id="stock-us"><span>Loading…</span></div>
         </div>
@@ -285,6 +311,55 @@
 </div>
 <script>
     const WORKER = 'https://trends-proxy.rokaku.workers.dev/';
+
+    // 每月待辦：months 是適用的月份（1–12）；省略 months 代表每個月都要做。
+    // 日期 day 可省略，有的話會顯示「N 日前」。只在符合當月時顯示，當月沒有項目整塊隱藏。
+    // 分兩塊：TAX_TODOS（稅費）與 LIFE_TODOS（生活）。
+    const TAX_TODOS = [
+        // { text: '繳牌照稅', months: [4], day: 30 },         // 4/1–4/30；請對照稅單確認
+        { text: '繳房屋稅', months: [5], day: 31 },          // 5/1–5/31；請對照稅單確認
+        { text: '申報綜合所得稅', months: [5], day: 31 },    // 5/1–5/31；請對照財政部公告確認
+        { text: '繳公路養管費', months: [7], day: 31 },    // 7/1–7/31；自用汽車及機車公路養管費(原汽燃費)
+        { text: '繳地價稅', months: [11], day: 30 },         // 11/1–11/30；請對照稅單確認
+    ];
+
+    const LIFE_TODOS = [
+        // { text: '繳房貸', day: 28},                              // 每月；知道繳款日再補 day，例如 day: 5
+        { text: '繳電費', months: [1, 3, 5, 7, 9, 11], day: 30},     // 奇數月；知道繳款日再補 day
+        { text: '繳瓦斯費', months: [1, 3, 5, 7, 9, 11], day: 30},
+        { text: '繳水費', months: [1, 3, 5, 7, 9, 11], day: 10},                              // 每月；知道繳款日再補 day，例如 day: 5
+        { text: '繳電話費', day: 10},
+        { text: '繳管理費', months: [1, 3, 5, 7, 9, 11], day: 30 },  
+        { text: '機車排氣檢驗 ', months: [8, 9, 10] },   // 月份依機車出廠年月而定，確認後取消註解並填入月份
+    ];
+
+    function renderTodos(todos, boxId, label) {
+        const month = new Date().getMonth() + 1;
+        const items = todos
+            .filter(t => !t.months || t.months.includes(month))
+            .sort((a, b) => (a.day || 99) - (b.day || 99));
+        if (!items.length) return;
+        const box = document.getElementById(boxId);
+        const title = document.createElement('div');
+        title.className = 'todo-title';
+        title.textContent = month + ' 月' + label;
+        const ul = document.createElement('ul');
+        items.forEach(t => {
+            const li = document.createElement('li');
+            li.textContent = t.text;
+            if (t.day) {
+                const s = document.createElement('small');
+                s.textContent = ' · ' + t.day + ' 日前';
+                li.appendChild(s);
+            }
+            ul.appendChild(li);
+        });
+        box.append(title, ul);
+        box.classList.add('show');
+    }
+
+    renderTodos(TAX_TODOS, 'todo-tax', '稅費待辦');
+    renderTodos(LIFE_TODOS, 'todo-life', '生活待辦');
 
     // 讀取 Worker 回傳的 RSS，把前 limit 筆渲染成新聞列：標題為連結，副標題點右側箭頭才展開
     function loadFeed(query, box, limit, render, errorText) {
@@ -420,19 +495,25 @@
             .catch(() => { box.innerHTML = '<span>Unable to load Taiwan stock data.</span>'; });
     })();
 
-    // 美股：FRED 的 S&P 500 每日收盤 CSV（經 Worker 解決 CORS），約 100 天
+    // 費城半導體指數 SOX：Yahoo Finance 每日收盤（經 Worker 解決 CORS），約 3 個月。
+    // timestamp 是秒，需依 gmtoffset 換成交易所當地日期。FRED 沒有 SOX，所以沒有備援。
     (function () {
         const box = document.getElementById('stock-us');
-        fetch(WORKER + '?type=us&id=SP500')
-            .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-            .then(text => {
-                const points = text.trim().split('\n').slice(1)
-                    .map(l => l.split(','))
-                    .filter(c => c.length === 2 && c[1] !== '' && !isNaN(num(c[1])))
-                    .map(c => ({ date: c[0], close: num(c[1]) }));
-                renderMarket(box, points, 'S&P 500', null);
+        fetch(WORKER + '?type=yahoo&symbol=SOX')
+            .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then(j => {
+                const res = j.chart.result[0];
+                const off = res.meta.gmtoffset || 0;
+                const closes = res.indicators.quote[0].close;
+                const points = res.timestamp
+                    .map((t, i) => ({
+                        date: new Date((t + off) * 1000).toISOString().slice(0, 10),
+                        close: closes[i]
+                    }))
+                    .filter(p => typeof p.close === 'number');
+                renderMarket(box, points, 'SOX', null);
             })
-            .catch(() => { box.innerHTML = '<span>Unable to load US stock data.</span>'; });
+            .catch(() => { box.innerHTML = '<span>Unable to load SOX data.</span>'; });
     })();
 
     // Google Trends：每個關鍵字是一顆切換按鈕，點擊後展開相關新聞
